@@ -1,0 +1,2 @@
+# marketing_editor_template_1
+marketing_editor_template_1
