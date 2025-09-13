@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Marketing Template Editor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { margin: 20px; }
+    .controls {
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .workspace {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 10px;
+      width: 100%;
+      max-width: 1400px;
+      margin-bottom: 20px;
+    }
+    .sidebar {
+      width: 200px;
+      background: #fff;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      height: 800px;
+    }
+    .sidebar h3 {
+      margin: 0;
+      padding: 8px;
+      text-align: center;
+      font-size: 15px;
+      background: #eee;
+      border-bottom: 1px solid #ccc;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .placeholder-container {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 8px;
+    }
+    .slide {
+      min-height: 160px;
+      padding: 5px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .slide img {
+      max-width: 160px;
+      max-height: 120px;
+      cursor: grab;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      transition: transform 0.2s ease;
+      display: block;
+      margin: 0 auto;
+    }
+    .slide img:hover { transform: scale(1.1); }
+    .slide .name {
+      font-size: 13px;
+      margin-top: 6px;
+      color: #444;
+    }
+    .template-box {
+      width: 850px;
+      height: 800px;
+      border: 2px dashed #aaa;
+      background-color: #fff;
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      position: relative;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .draggable, .draggable-text {
+      position: absolute;
+      cursor: move;
+    }
+    .draggable-text {
+      padding: 5px 10px;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    .logo { background: transparent !important; }
+    .a4-controls {
+      width: 100%;
+      max-width: 1200px;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px dashed #aaa;
+      background-color: #fff;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .a4-controls input {
+      padding: 5px;
+      font-size: 14px;
+    }
+    #storeFooter {
+      text-align: center;
+      margin-top: 20px;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+    .store-footer-controls {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .store-footer-controls input {
+      padding: 5px;
+      font-size: 14px;
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Marketing Template Editor</h1>
+
+  <div class="controls">
+    <div>
+      <label>Upload Background Image:</label>
+      <input type="file" id="bgInput" accept="image/*">
+    </div>
+    <div>
+      <label>Choose Background Color:</label>
+      <input type="color" id="bgColor">
+      <button onclick="applyBackgroundColor()">Apply Color</button>
+    </div>
+    <div>
+      <label>Upload Logo:</label>
+      <input type="file" id="logoInput" accept="image/*">
+      <button onclick="uploadLogo()">Upload Logo</button>
+    </div>
+    <div>
+      <label>Add Footer Text:</label>
+      <input type="text" id="footerInput" placeholder="Enter footer text here">
+      <button onclick="addFooter()">Add Footer</button>
+    </div>
+    <div>
+      <label>Upload Banner:</label>
+      <input type="file" id="bannerUpload" accept="image/*">
+      <button onclick="uploadBanner()">Upload Banner</button>
+    </div>
+    <div>
+      <button onclick="downloadAsPDF()">Download (A4)</button>
+      <button onclick="downloadSessionProductAsIs()">Download Product Only</button>
+      <button onclick="downloadAllFieldsAsIs()">Download All Fields</button>
+    </div>
+  </div>
+
+  <div class="a4-controls">
+    <div>
+      <label>A4 Title:</label>
+      <input type="text" id="a4Title" placeholder="Enter pamphlet title">
+    </div>
+    <div>
+      <label>A4 Subtitle:</label>
+      <input type="text" id="a4Subtitle" placeholder="Enter pamphlet subtitle">
+    </div>
+    <div>
+      <label>A4 Footer:</label>
+      <input type="text" id="a4Footer" placeholder="Enter footer text">
+    </div>
+    <div>
+      <button onclick="downloadCustomA4()">Download Custom A4 Pamphlet</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="sidebar">
+      <h3>Products</h3>
+      <div id="productPlaceholder" class="placeholder-container"></div>
+    </div>
+    <div id="templateBox" class="template-box"> 
+      <div id="storeFooter">
+        <p id="storeFooterName">Default Store Name</p>
+        <p id="storeFooterAddress">Default Store Address</p>
+      </div>
+    </div>
+    <div class="sidebar">
+      <h3>Templates</h3>
+      <div id="templatePlaceholder" class="placeholder-container"></div>
+    </div>
+  </div>
+
+  <div class="store-footer-controls">
+    <label>Store Name:</label>
+    <input type="text" id="storeNameInput" placeholder="Enter Store Name">
+    <label>Store Address:</label>
+    <input type="text" id="storeAddressInput" placeholder="Enter Store Address">
+    <button onclick="updateStoreFooter()">Update Store Details</button>
+  </div>
+
+  {% if selected %} 
+  <div id="sessionProduct" style="display: none;">
+    <img src="{{ selected.image_path }}" alt="{{ selected.item_code }}">
+  </div>
+  {% endif %} 
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const templateBox = document.getElementById('templateBox');
+
+      function attachResize(el) {
+        el.addEventListener('wheel', function(e) {
+          e.preventDefault();
+          let delta = e.deltaY < 0 ? 10 : -10;
+          let newWidth = Math.max(20, el.offsetWidth + delta);
+          let newHeight = Math.max(20, el.offsetHeight + delta);
+          el.style.width = newWidth + 'px';
+          el.style.height = newHeight + 'px';
+        });
+      }
+
+      function makeDraggable(el) {
+        attachResize(el);
+        el.onmousedown = function(e) {
+          let offsetX = e.clientX - el.offsetLeft;
+          let offsetY = e.clientY - el.offsetTop;
+          function move(ev) {
+            el.style.left = Math.min(Math.max(0, ev.clientX - offsetX), templateBox.clientWidth - el.offsetWidth) + 'px';
+            el.style.top  = Math.min(Math.max(0, ev.clientY - offsetY), templateBox.clientHeight - el.offsetHeight) + 'px';
+          }
+          function stop() {
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', stop);
+          }
+          document.addEventListener('mousemove', move);
+          document.addEventListener('mouseup', stop);
+        };
+        el.oncontextmenu = function(e) {
+          e.preventDefault();
+          if (confirm('Remove this element?')) el.remove();
+        };
+      }
+
+  // ✅ Create image container with store name + address ABOVE the image
+// Replace the current createImageContainer function with this code:
+
+// Replace your current createImageContainer function with the code below:
+
+function createImageContainer(src, name, left, top) {
+    // Create an outer container with absolute positioning.
+    const outerContainer = document.createElement('div');
+    outerContainer.style.position = 'absolute';
+    outerContainer.style.left = left;
+    outerContainer.style.top = top;
+    outerContainer.style.width = '150px';
+    outerContainer.style.height = '150px';
+
+    // Create an inner container (relative positioning so overlays work correctly).
+    const container = document.createElement('div');
+    container.style.position = 'relative';
+    container.style.width = '100%';
+    container.style.height = '100%';
+
+    // Create the product image.
+    const img = document.createElement('img');
+    img.src = src;
+    img.style.width = '150px';
+    img.style.height = '150px';
+    img.style.objectFit = 'cover';
+    container.appendChild(img);
+
+    // Create overlay caption for default store details on top of the image.
+    const caption = document.createElement('div');
+    caption.innerHTML = `
+      <p style="margin:0; font-size:14px; font-weight:bold; color:#fff;">
+        Default Store Name
+      </p>
+      <p style="margin:0; font-size:12px; color:#fff;">
+        Default Store Address
+      </p>
+    `;
+    // Style the overlay caption.
+    caption.style.position = 'absolute';
+    caption.style.top = '0';
+    caption.style.left = '0';
+    caption.style.width = '100%';
+    caption.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    caption.style.textAlign = 'center';
+    caption.style.padding = '2px 0';
+    container.appendChild(caption);
+
+    outerContainer.appendChild(container);
+    makeDraggable(outerContainer);
+    return outerContainer;
+}
+      function selectProduct(src, name) {
+        const leftPos = (templateBox.clientWidth / 2 - 75) + 'px';
+        const topPos  = (templateBox.clientHeight / 2 - 75) + 'px';
+        const container = createImageContainer(src, name, leftPos, topPos);
+        templateBox.appendChild(container);
+      }
+
+      templateBox.ondrop = ev => {
+        ev.preventDefault();
+        const src = ev.dataTransfer.getData('src');
+        const name = ev.dataTransfer.getData('name');
+        if (src) {
+          const leftPos = (ev.offsetX - 75) + 'px';
+          const topPos  = (ev.offsetY - 75) + 'px';
+          const container = createImageContainer(src, name, leftPos, topPos);
+          templateBox.appendChild(container);
+        }
+      };
+
+      // background, logo, footer, downloads... (keep rest same)
+      document.getElementById('bgInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => { templateBox.style.backgroundImage = `url(${ev.target.result})`; };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      window.applyBackgroundColor = function() {
+        const color = document.getElementById('bgColor').value;
+        templateBox.style.backgroundColor = color;
+        templateBox.style.backgroundImage = '';
+      };
+
+      window.uploadLogo = function() {
+        const file = document.getElementById('logoInput').files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            const logo = document.createElement('img');
+            logo.src = ev.target.result;
+            logo.className = 'draggable logo';
+            logo.style.width = '120px';
+            logo.style.top = '10px';
+            logo.style.left = '10px';
+            makeDraggable(logo);
+            templateBox.appendChild(logo);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      window.addFooter = function() {
+        const footerText = document.getElementById('footerInput').value;
+        if (!footerText.trim()) { alert("Footer text cannot be empty!"); return; }
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'draggable-text';
+        footerDiv.textContent = footerText;
+        footerDiv.style.top = (templateBox.clientHeight - 40) + "px";
+        footerDiv.style.left = "10px";
+        makeDraggable(footerDiv);
+        footerDiv.addEventListener('dblclick', function() {
+          const newText = prompt("Edit Footer:", footerDiv.textContent);
+          if (newText !== null) footerDiv.textContent = newText;
+        });
+        templateBox.appendChild(footerDiv);
+      };
+
+      window.downloadAsPDF = function() {
+        html2canvas(templateBox).then(canvas => {
+          const { jsPDF } = window.jspdf;
+          const pdf = new jsPDF("p", "pt", "a4");
+          const pageWidth = pdf.internal.pageSize.getWidth();
+          const imgData = canvas.toDataURL("image/png");
+          const imgHeight = canvas.height * pageWidth / canvas.width;
+          pdf.addImage(imgData, "PNG", 0, 0, pageWidth, imgHeight);
+          pdf.save("template.pdf");
+        });
+      };
+
+      window.updateStoreFooter = function() {
+        const name = document.getElementById('storeNameInput').value;
+        const address = document.getElementById('storeAddressInput').value;
+        document.getElementById('storeFooterName').textContent = name || "Default Store Name";
+        document.getElementById('storeFooterAddress').textContent = address || "Default Store Address";
+
+        // update captions on all product containers
+        document.querySelectorAll('#templateBox div').forEach(div => {
+          if (div.querySelector && div.querySelector('p')) {
+            const ps = div.querySelectorAll('p');
+            if (ps.length === 2) {
+              ps[0].textContent = document.getElementById('storeFooterName').textContent;
+              ps[1].textContent = document.getElementById('storeFooterAddress').textContent;
+            }
+          }
+        });
+      };
+
+      // Load products
+      fetch("static/data.json")
+        .then(res => res.json())
+        .then(json => {
+          const products = json.data;
+          const productPlaceholder = document.getElementById("productPlaceholder");
+          products.forEach(product => {
+            const slide = document.createElement("div");
+            slide.className = "slide";
+            slide.innerHTML = `
+              <img src="${product.image_path}" alt="${product.item_code}" draggable="true">
+              <div class="name">${product.item_code}</div>
+            `;
+            const img = slide.querySelector("img");
+            img.addEventListener("dragstart", ev => {
+              ev.dataTransfer.setData("src", img.src);
+              ev.dataTransfer.setData("name", img.alt);
+            });
+            slide.addEventListener("click", function() {
+              selectProduct(product.image_path, product.item_code);
+            });
+            productPlaceholder.appendChild(slide);
+          });
+        })
+        .catch(err => console.error("Error loading product data:", err));
+
+      // Templates list
+      const templatePlaceholder = document.getElementById('templatePlaceholder');
+      const templates = [
+        { name: "Sale Banner", image: "static/templates/template1.jpg" },
+        { name: "Festive Offer", image: "static/templates/template2.jpg" },
+        { name: "New Arrival", image: "static/templates/template3.jpg" }
+      ];
+      templates.forEach(t => {
+        const slide = document.createElement("div");
+        slide.className = "slide";
+        slide.innerHTML = `<img src="${t.image}" alt="${t.name}"><div class="name">${t.name}</div>`;
+        const img = slide.querySelector("img");
+        img.draggable = true;
+        img.addEventListener("dragstart", ev => {
+          ev.dataTransfer.setData("src", img.src);
+          ev.dataTransfer.setData("name", img.alt);
+        });
+        slide.addEventListener("click", function() {
+          const banner = document.createElement("img");
+          banner.src = img.src;
+          banner.className = "draggable";
+          banner.style.width = "400px";
+          banner.style.left = (templateBox.clientWidth / 2 - 200) + "px";
+          banner.style.top = (templateBox.clientHeight / 2 - 100) + "px";
+          makeDraggable(banner);
+          templateBox.appendChild(banner);
+        });
+        templatePlaceholder.appendChild(slide);
+      });
+
+      window.uploadBanner = function() {
+        const file = document.getElementById("bannerUpload").files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(ev) {
+            const slide = document.createElement("div");
+            slide.className = "slide";
+            slide.innerHTML = `
+              <img src="${ev.target.result}" alt="Custom Banner" draggable="true">
+              <div class="name">Custom Banner</div>
+            `;
+            const img = slide.querySelector("img");
+            img.addEventListener("dragstart", ev2 => {
+              ev2.dataTransfer.setData("src", img.src);
+              ev2.dataTransfer.setData("name", img.alt);
+            });
+            slide.addEventListener("click", function() {
+              const banner = document.createElement("img");
+              banner.src = img.src;
+              banner.className = "draggable";
+              banner.style.width = "400px";
+              banner.style.left = (templateBox.clientWidth / 2 - 200) + "px";
+              banner.style.top = (templateBox.clientHeight / 2 - 100) + "px";
+              makeDraggable(banner);
+              templateBox.appendChild(banner);
+            });
+            document.getElementById("templatePlaceholder").appendChild(slide);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+    });
+  </script>
+</body>
+</html>
+
